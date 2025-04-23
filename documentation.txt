@@ -1,0 +1,49 @@
+# Adaptive Learning Project
+
+A personalized learning system powered by artificial intelligence. It delivers customized exercises to students based on their learning profile, mastery levels, question style preferences, and predictions from a Deep Knowledge Tracing (DKT) model.
+
+## 🔍 What the Project Does
+- Tracks student performance over time
+- Builds a dynamic state vector for each student
+- Trains a reinforcement learning agent to choose the next best exercise
+- Aims to maximize learning utility using: success probability × difficulty level
+
+## 🗂️ Project Structure
+```
+adaptive-learning-project/
+├── notebooks/                # Interactive notebooks
+│   └── DKT-Colab.ipynb
+├── src/                     # Source code
+│   ├── student_state.py     # Student state representation
+│   ├── rl_agent.py          # Reinforcement learning agent
+│   └── dkt_model.py         # (coming soon) DKT model
+├── data/                    # Datasets (simulated or real)
+├── reports/                 # Graphs and analysis results
+├── paper/                   # Academic writing
+├── README.md
+└── requirements.txt         # Library dependencies
+```
+
+## ▶️ How to Run
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Run code from the notebook:
+   ```python
+   from src.student_state import StudentState
+   from src.rl_agent import SmartRLSimulator
+   ```
+
+## 🧠 Tools and Technologies
+- Python 3
+- PyTorch
+- NumPy & Matplotlib
+- Reinforcement Learning (Q-learning)
+- Deep Knowledge Tracing (DKT)
+
+## 📚 Project Status
+- ✅ Student state vector implemented
+- ✅ Basic RL agent with Q-table
+- 🔜 Upgrade to DQN / fine-tuning
+- 🔜 Integrate real data (e.g., ASSISTments)

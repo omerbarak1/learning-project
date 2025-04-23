@@ -1,0 +1,7 @@
+numpy
+matplotlib
+torch
+notebook
+jupyter
+scikit-learn
+openai
