@@ -41,7 +41,6 @@ class PrefixPromptDataset(Dataset):
     def __getitem__(self, idx):
         ex = self.examples[idx]
         # ← Add this debug print:
-        print(f"📦 __getitem__ called with idx={idx}, keys={list(ex.keys())}")
         return ex
 
 
@@ -49,7 +48,6 @@ def make_collate_fn(tokenizer, model, encoder, prefix_len, device):
     hidden_size = model.config.hidden_size
 
     def collate_fn(batch):
-        print("🧐 RAW BATCH (first 2 items):", batch[:2])
         all_embeds, all_masks, all_labels = [], [], []
 
         for ex in batch:
