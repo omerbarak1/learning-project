@@ -155,6 +155,7 @@ def main():
         save_steps=500,
         report_to='none',
         remove_unused_columns=False,      # << here
+        dataloader_pin_memory=False,
 )
 
     # trainer
