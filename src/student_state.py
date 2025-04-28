@@ -22,32 +22,32 @@ class StudentState:
         # 1. Define a generic math curriculum hierarchy if not provided
         self.topic_hierarchy = topic_hierarchy or {
             'arithmetic': {
-                'fractions': None,
-                'percentages': None,
-                'decimals': None
+                'fractions': 0.5,
+                'percentages': 0.2,
+                'decimals': 0.4
             },
             'algebra': {
-                'expressions': None,
-                'equations': None,
-                'inequalities': None
+                'expressions': 0.6,
+                'equations': 0.9,
+                'inequalities': 0.5
             },
             'geometry': {
-                'triangles': None,
-                'circles': None,
-                'polygons': None
+                'triangles': 0.1,
+                'circles': 0.3,
+                'polygons': 0.2
             },
             'probability_statistics': {
-                'probability': None,
-                'statistics': None
+                'probability': 0.4,
+                'statistics': 0.7
             },
             'functions': {
-                'linear': None,
-                'quadratic': None
+                'linear': 0.7,
+                'quadratic': 0.5
             },
             'calculus': {
-                'limits': None,
-                'derivatives': None,
-                'integrals': None
+                'limits': 0.9,
+                'derivatives': 0.2,
+                'integrals': 0.4
             }
         }
 

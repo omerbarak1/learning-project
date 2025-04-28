@@ -5,3 +5,5 @@ notebook
 jupyter
 scikit-learn
 openai
+transformers 
+python-dotenv

@@ -1,78 +1,108 @@
-import os
-import sys
+# src/scripts/synthesize_data.py
+
 import json
 import random
-
-# Ensure we can import the project as a package, regardless of where this script lives
-script_dir = os.path.dirname(__file__)
-# Go up two levels: from scripts/ or src/scripts/ back to project root
-project_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
-from src.student_state import StudentState
+from src.student_state import StudentState               # use your StudentState class
 from src.utils.flatten import flatten_dict
-from src.agents.prompt_action import PromptAction, PROMPT_TEMPLATES
+
+OUTPUT_PATH = "src/data/synthetic_state_prompt_ext.jsonl"
+N_EXAMPLES = 5000
+
+# Define various prompt templates incorporating state
+
+def template_basic(topic, difficulty, state, mastery_val):
+    return f"Please solve a level {difficulty} {topic} problem."
 
 
-def synthesize_data(n_samples=5000, out_path="data/synthetic_state_prompt.jsonl"):
-    """
-    Generate synthetic State→Prompt examples using existing templates.
+def template_mastery_focus(topic, difficulty, state, mastery_val):
+    return (f"Student's mastery in {topic} is {mastery_val:.2f}. "
+            f"Create a level {difficulty} problem to further develop this skill.")
 
-    Args:
-        n_samples (int): Number of examples to generate.
-        out_path (str): Path to output JSONL file.
-    """
-    # Ensure output directory exists
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
-    # Initialize a fresh student state
+def template_interest_blend(topic, difficulty, state, mastery_val):
+    interests = state.get("interests", {})
+    if interests:
+        choice = random.choice(list(interests.keys()))
+        return (f"Since the student enjoys {choice}, craft a level {difficulty} {topic} word problem "
+                f"that incorporates {choice}.")
+    return template_basic(topic, difficulty, state, mastery_val)
+
+
+def template_attention_short(topic, difficulty, state, mastery_val):
+    att = state.get("psychology", {}).get("attention_level", 1.0)
+    if att < 0.5:
+        return (f"Attention seems low ({att:.2f}), so give a very short level {difficulty} "
+                f"{topic} question.")
+    else:
+        return template_basic(topic, difficulty, state, mastery_val)
+
+
+def template_goal_driven(topic, difficulty, state, mastery_val):
+    speed_goal = state.get("goals", {}).get("speed", 0.0)
+    if speed_goal > 0.5:
+        return (f"Student aims for speed ({speed_goal:.2f}). "
+                f"Generate a timed level {difficulty} {topic} challenge.")
+    return template_basic(topic, difficulty, state, mastery_val)
+
+# List of available templates
+TEMPLATES = [
+    template_basic,
+    template_mastery_focus,
+    template_interest_blend,
+    template_attention_short,
+    template_goal_driven,
+]
+
+
+def generate_example():
+    # 1) Instantiate StudentState and get state dict
     student = StudentState()
+    state = student.state
 
-    with open(out_path, 'w', encoding='utf-8') as f:
-        for i in range(n_samples):
-            # 1) Randomly update mastery of one topic
-            topic = random.choice(student.state['topics_ranked_list'])
-            success = random.random() < 0.5
-            student.update_mastery(topic, success)
+    # 2) Flatten mastery and avoid zero values
+    mastery_flat = flatten_dict(state['mastery'])
+    mastery_flat = {k: (v if v > 0 else 0.01) for k, v in mastery_flat.items()}
 
-            # 2) Flatten state and build summaries for placeholders
-            flat = flatten_dict(student.state)
-            summaries = {
-                'mastery': student.state['topics_ranked_str'],
-                'interests': ', '.join(f"{k.split('_',1)[1]}: {v}" for k,v in flat.items() if k.startswith('interests_')),
-                'goals': ', '.join(f"{k.split('_',1)[1]}: {v}" for k,v in flat.items() if k.startswith('goals_')),
-                'psychology': ', '.join(f"{k.split('_',1)[1]}: {v}" for k,v in flat.items() if k.startswith('psychology_')),
-                'learning_style': ', '.join(f"{k.split('_',1)[1]}: {v}" for k,v in flat.items() if k.startswith('learning_style_')),
-                'meta': ', '.join(f"{k.split('_',1)[1]}: {v}" for k,v in flat.items() if k.startswith('meta_')),
-                'topics_ranked_str': student.state['topics_ranked_str']
-            }
-            # 3) Short features without prefixes
-            short_feats = {k.split('_',1)[1]: v for k,v in flat.items() if '_' in k}
+    # 3) Choose a random topic
+    chosen_topic = random.choice(list(mastery_flat.keys()))
+    mastery_val = mastery_flat[chosen_topic]
 
-            # 4) Combine all for formatting
-            fmt = {}
-            fmt.update(flat)
-            fmt.update(short_feats)
-            fmt.update(summaries)
-            # include topic placeholder for templates
-            fmt['topic'] = topic
-            # Provide placeholder for context (for HINT templates)
-            fmt['context'] = ''
+    # 4) Sample difficulty and time
+    difficulty = random.randint(1, 5)          # integer difficulty 1–5
+    time_spent = random.uniform(10, 120)       # time in seconds
 
-            # 5) Choose action and random template
-            action = random.choice(list(PromptAction))
-            template = random.choice(PROMPT_TEMPLATES[action])
+    # 5) Determine correctness probability based on mastery & difficulty
+    p = mastery_val * ((6.0 - difficulty))
+    p = max(0.0, min(1.0, p))
+    correctness = random.uniform(0,1-p)
 
-            # 6) Format prompt text
-            prompt = template.format(**fmt)
+    # 6) Compute reward
+    reward = (1.0 / mastery_val) * (1.0 / time_spent) * correctness * difficulty
 
-            # 7) Write out JSONL record
-            record = {'state': student.state, 'prompt': prompt}
-            f.write(json.dumps(record, ensure_ascii=False) + '\n')
+    # 7) Build prompt using a random template
+    template = random.choice(TEMPLATES)
+    prompt = template(chosen_topic, difficulty, state, mastery_val)
 
-    print(f"Synthetic data written to {out_path}")
+    return {
+        "state":       state,
+        "prompt":      prompt,
+        
+        # "difficulty":  difficulty,
+        # "time":        time_spent,
+        # "correctness": correctness,
+        
+        "reward":      reward,
+    }
 
 
-if __name__ == '__main__':
-    synthesize_data()
+def main():
+    random.seed(42)
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as out:
+        for _ in range(N_EXAMPLES):
+            ex = generate_example()
+            out.write(json.dumps(ex, ensure_ascii=False) + "\n")
+    print(f"Wrote {N_EXAMPLES} examples to {OUTPUT_PATH}")
+
+
+if __name__ == "__main__":
+    main()
